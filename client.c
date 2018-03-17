@@ -21,7 +21,10 @@ struct msg
 	int fromID;
 }m;
 
+
+
 int repeat = 0;
+int users_available = 0;
 
 void tostring(char str[], int num)
 {
@@ -73,6 +76,20 @@ void *printprompt(void *temp)
 	}
 }
 
+int check_valid_user(int j)
+{
+	int *i = data;
+	while (*i != NULL)
+	{
+		if (*i == j)
+		{
+			return 1;
+		}	
+		++i;
+	}
+	return 0;
+}
+
 void *handlestdin(void *temp)
 {
 	struct pollfd fds[1];
@@ -85,23 +102,31 @@ void *handlestdin(void *temp)
 	while (1)
 	{
 		printf("Available users are: \n");
+		int total = 0;
 		int *i = data;
 		while (*i != NULL)
 		{
 			if (*i != myId)
 			{
 				printf("%s %d\n", "User ID:", *i);
+				total++;
 			}	
 			++i;
 		}	
-		//printcheck = 1;
+		
 		printf("Select the ID to whom you want to send the message to. Select 0 if you want to send the message to everyone: ");
+		
 		int n;
 		char number[1000];
 		fgets(number, 1000, stdin);
 		number[strlen(number) - 1] = '\0';
-		//printf(number);
+
 		n = str_to_int(number);
+		if (n != 0 && !check_valid_user(n))
+		{
+			puts("Invalid user selected");
+			continue;
+		}
 		m.toID = n;
 		printf("%d\n", m.toID);
 		printf("Enter message that you wish to send : ");
@@ -114,10 +139,12 @@ void *handlestdin(void *temp)
 		strcat(m.message, " says: ");
 		strcat(m.message, message);
 		m.message[strlen(message) + 8] = '\0';
+
+		//Checking error 1, whether a user enters an invalid user id 
 		if(send(s1, &m, sizeof(m), 0) < 0)
 		{
-			puts("Send failed");
-			return 1;
+			puts("Send failed, you have chosen an invalid user id");
+			continue;
 		}
 	}
 }
@@ -153,7 +180,7 @@ void *handlesocketin(void *temp)
 }
 
 
-int main()
+int main(int argc, char **argv)
 {
 	
 	if (signal(SIGINT, sigint_handler) == SIG_ERR)
@@ -162,6 +189,18 @@ int main()
 		exit(1);
 	}
 	
+	if (argc < 3)
+	{
+		printf("usage: ./client <IP Address> <Port>\n");
+		return 0;
+	}
+
+	char *ip_address = malloc(1024);
+	strcpy(ip_address, argv[1]);
+
+	int port = str_to_int(argv[2]);
+
+
 	int s1;
 	struct sockaddr_in server;
 	char message[1000], reply[2000];
@@ -174,9 +213,9 @@ int main()
 	
 	
 	
-	server.sin_addr.s_addr = inet_addr("127.0.0.1");
+	server.sin_addr.s_addr = inet_addr(ip_address);
 	server.sin_family = AF_INET;
-	server.sin_port = htons(4440);
+	server.sin_port = htons(port);
  
 	if (connect(s1, (struct sockaddr *)&server, sizeof(server)) < 0)
 	{
@@ -193,7 +232,7 @@ int main()
 	else
 	{
 		reply[read_size] = '\0';
-		printf("%s\n", reply);
+		printf("%s %s\n","Your User ID is:", reply);
 		myId = str_to_int(reply);
 	}
 
@@ -210,10 +249,11 @@ int main()
 	*temp = s1;
 	pthread_create(&input1, NULL, handlestdin, (void *)temp);
 	pthread_create(&input2, NULL, handlesocketin, (void *)temp);
-	pthread_create(&input3, NULL, printprompt, (void *)temp);
+	//pthread_create(&input3, NULL, printprompt, (void *)temp);
 	while (1)
 	{
-		;
+		if (s1 == -1)
+			return 0;
 	}
 	//close(s1);
 	//shmdt(data);

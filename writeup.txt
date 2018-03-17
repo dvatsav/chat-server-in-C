@@ -1,0 +1,19 @@
+This chat system is implemented using sockets. There is a server to which multiple clients connect. The server relays messages between clients. This uses TCP/IP sockets.
+Multithreading has been used to handle each client individually. A shared memory has been initialized in order to store the currently available members. The socket writes to this shared memory while the clients may only read from this shared memory as the permissions have been specified as such. 
+
+In each client, there are two threads, one two handle input from stdin and one from the socket. In each thread, polling has also been implement to determine which of stdin and the socket are ready for input. 
+
+
+For compiling the program, use make all in the terminal.
+
+Testing of the program:
+run the server program by typing ./server
+open up some clients by typing ./client 127.0.0.1 4440
+In each client, a user ID will be assigned. The user will be prompted to send a message with a list of available recepients.
+Send 0 to send message to everyone, or else specify a specific user.
+If an invalid user is selected, the user should see output "invalid user"
+
+
+Errors: 
+Invalid users selected
+Invalid ports and IP addresses while connecting
