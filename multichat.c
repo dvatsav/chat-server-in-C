@@ -25,6 +25,8 @@ struct msg
 	char message[2000];
 	int toID;
 	int fromID;
+	int numUsersFor;
+	int userlist[1000];
 };
 
 
@@ -114,19 +116,24 @@ void *handler(void *temp)
 	{
 		//client_message[read_size] = '\0';
 		
-		if (m.toID == 0)
+		if (m.userlist[0] == 0)
 		{
 			broadcast(m.message, m.fromID, strlen(m.message));
 		}
 		else
 		{
 			printf("%s\n", "sending message");
-			if (send(m.toID, &m.message, strlen(m.message), 0) == -1)
+			int i = 0;
+			for ( ; i < m.numUsersFor ; ++i)
 			{
-				perror("send");
-				puts("invalid user id sent");
-				send(m.fromID, "Invalid user selected\n", 21, 0);
+				if (send(m.userlist[i], &m.message, strlen(m.message), 0) == -1)
+				{
+					perror("send");
+					puts("invalid user id sent");
+					send(m.fromID, "Invalid user selected\n", 21, 0);
+				}
 			}
+			
 		}
 	}
 	 

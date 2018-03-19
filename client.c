@@ -19,6 +19,8 @@ struct msg
 	char message[2000];
 	int toID;
 	int fromID;
+	int numUsersFor;
+	int userlist[1000];
 }m;
 
 
@@ -90,6 +92,34 @@ int check_valid_user(int j)
 	return 0;
 }
 
+int check_valid_sequence(char nums[])
+{
+	int i = 0;
+	for ( ; i < strlen(nums) ; ++i)
+	{
+		if ((nums[i] < 48 || nums[i] > 57) && nums[i] != ' ')
+		{
+			return 5;
+		}
+
+	}
+	char *result;
+	int n;
+	result = strtok(nums, " ");
+	while (result != NULL)
+	{
+		n = str_to_int(result);
+		if (n != 0 && !check_valid_user(n))
+		{
+
+			return 6;
+		}	
+		result = strtok(NULL, " ");
+	}
+	return 1;
+	
+}
+
 void *handlestdin(void *temp)
 {
 	struct pollfd fds[1];
@@ -114,21 +144,35 @@ void *handlestdin(void *temp)
 			++i;
 		}	
 		
-		printf("Select the ID to whom you want to send the message to. Select 0 if you want to send the message to everyone: ");
-		
+		printf("Select the ID to whom you want to send the message to. Select 0 if you want to send the message to everyone. If you want to send a message to only a group of people, specify the User IDs (space separated): ");
+				
 		int n;
 		char number[1000];
+		char *duplicate;
+
 		fgets(number, 1000, stdin);
 		number[strlen(number) - 1] = '\0';
-
-		n = str_to_int(number);
-		if (n != 0 && !check_valid_user(n))
+		duplicate = strdup(number);
+		if (check_valid_sequence(duplicate) == 6)
 		{
 			puts("Invalid user selected");
-			continue;
+			continue;	
 		}
-		m.toID = n;
-		printf("%d\n", m.toID);
+		if (check_valid_sequence(duplicate) == 5)
+		{
+			puts("invalid format of numbers");
+			continue;	
+		}
+		char *result;
+		m.numUsersFor = 0;
+		result = strtok(number, " ");
+		while (result != NULL)
+		{
+			m.userlist[m.numUsersFor++] = str_to_int(result);	
+			result = strtok(NULL, " ");
+		}
+		//m.toID = n;
+		//printf("%d\n", m.toID);
 		printf("Enter message that you wish to send : ");
 		char message[1000];
 		fgets(message, 1024, stdin);
