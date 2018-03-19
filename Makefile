@@ -1,10 +1,10 @@
-all: client multichat
+all: client server
 
 client: client.c
-	gcc -pthread -o client client.c
+	gcc -w -pthread -o client client.c
 
-multichat: multichat.c
-	gcc -pthread -o server multichat.c
+server: server.c
+	gcc -w -pthread -o server server.c
 
 clean: 
 	rm server client

@@ -1,3 +1,11 @@
+/*
+* Created By
+* Deepak Srivatsav, 2016030
+* Anubhav Chaudhary, 2016013
+* IIIT, Delhi
+*/
+
+
 #include <sys/socket.h>
 #include <linux/types.h>
 #include <arpa/inet.h>
@@ -29,6 +37,9 @@ struct msg
 	int userlist[1000];
 };
 
+/*
+* This function broadcasts a message to all the clients
+*/
 
 void broadcast(char message[1024], int sendID, int mlength)
 {
@@ -39,6 +50,10 @@ void broadcast(char message[1024], int sendID, int mlength)
 			send(connections[i], message, mlength, 0);
 	}
 }
+
+/*
+* Converts an integer to a string
+*/
 
 void tostring(char str[], int num)
 {
@@ -59,6 +74,10 @@ void tostring(char str[], int num)
 	str[len] = '\0';
 }
 
+/*
+* Handles ctrl C by deleting the shared memory segment and closing all client sockets
+*/
+
 void sigint_handler(int sg)
 {
 	shmdt(data);
@@ -71,6 +90,10 @@ void sigint_handler(int sg)
 	}
 	exit(1);
 }
+
+/*
+* Updates the shared memory while removing the user
+*/
 
 int remove_user(int userID)
 {
@@ -104,7 +127,9 @@ int remove_user(int userID)
 	broadcast(bcast, userID, strlen(bcast));
 }
 
-
+/*
+* Each client is a thread, and this function handles the thread
+*/
 
 void *handler(void *temp)
 {
@@ -114,7 +139,6 @@ void *handler(void *temp)
 	struct msg m;
 	while((read_size = recv(s2, &m, sizeof(m), 0)) > 0)
 	{
-		//client_message[read_size] = '\0';
 		
 		if (m.userlist[0] == 0)
 		{

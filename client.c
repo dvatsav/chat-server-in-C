@@ -1,3 +1,12 @@
+/*
+* Created By
+* Deepak Srivatsav, 2016030
+* Anubhav Chaudhary, 2016013
+* IIIT, Delhi
+*/
+
+
+
 #include <stdio.h> 
 #include <string.h> 
 #include <sys/socket.h>
@@ -9,10 +18,19 @@
 #include <poll.h>
 #include <pthread.h>
 
+/*
+* Initialize shared memory requirements. This is used to store 
+* the list of active connections
+*/
+
 int myId;
 key_t key;
 int shmid;
 int *data;
+
+/*
+* Structure for storing and sending each message
+*/
 
 struct msg
 {
@@ -27,6 +45,10 @@ struct msg
 
 int repeat = 0;
 int users_available = 0;
+
+/*
+* Converts a number to a string
+*/
 
 void tostring(char str[], int num)
 {
@@ -47,10 +69,18 @@ void tostring(char str[], int num)
 	str[len] = '\0';
 }
 
+/*
+* Handle ctrl C
+*/
+
 void sigint_handler(int sg)
 {
 	exit(1);
 }
+
+/*
+* convert string to integer
+*/
 
 int str_to_int(char num[1024])
 {
@@ -72,11 +102,14 @@ void *printprompt(void *temp)
 	{
 		if (printcheck == 1)
 		{
-			//printf("Select the ID to whom you want to send the message to. Select 0 if you want to send the message to everyone: ");
 			printcheck = 0;
 		}
 	}
 }
+
+/*
+* Checks whether the selected user is active by checking through the shared memory segment
+*/
 
 int check_valid_user(int j)
 {
@@ -91,6 +124,11 @@ int check_valid_user(int j)
 	}
 	return 0;
 }
+
+/*
+* Checks whether the sequence of people inserted by the user is valid, i.e, all the users must exist.
+* Also, the input should be space separated.
+*/
 
 int check_valid_sequence(char nums[])
 {
@@ -119,6 +157,10 @@ int check_valid_sequence(char nums[])
 	return 1;
 	
 }
+
+/*
+* Thread handler to handle input from stdin. Uses polling to select between stdin and socket input
+*/
 
 void *handlestdin(void *temp)
 {
@@ -153,11 +195,13 @@ void *handlestdin(void *temp)
 		fgets(number, 1000, stdin);
 		number[strlen(number) - 1] = '\0';
 		duplicate = strdup(number);
+		//Checking error, whether a user enters a valid user
 		if (check_valid_sequence(duplicate) == 6)
 		{
 			puts("Invalid user selected");
 			continue;	
 		}
+		//Checking error, whether a valid sequence is inserted
 		if (check_valid_sequence(duplicate) == 5)
 		{
 			puts("invalid format of numbers");
@@ -171,8 +215,7 @@ void *handlestdin(void *temp)
 			m.userlist[m.numUsersFor++] = str_to_int(result);	
 			result = strtok(NULL, " ");
 		}
-		//m.toID = n;
-		//printf("%d\n", m.toID);
+		//Segment to send the messages along with hardcoded pre and post text
 		printf("Enter message that you wish to send : ");
 		char message[1000];
 		fgets(message, 1024, stdin);
@@ -184,7 +227,7 @@ void *handlestdin(void *temp)
 		strcat(m.message, message);
 		m.message[strlen(message) + 8] = '\0';
 
-		//Checking error 1, whether a user enters an invalid user id 
+		//Checking error, whether a user enters an invalid user id 
 		if(send(s1, &m, sizeof(m), 0) < 0)
 		{
 			puts("Send failed, you have chosen an invalid user id");
@@ -192,6 +235,10 @@ void *handlestdin(void *temp)
 		}
 	}
 }
+
+/*
+* Thread handler to handle input from socket. Also uses sockets to decide between stdin and socket input
+*/
 
 void *handlesocketin(void *temp)
 {
@@ -293,14 +340,11 @@ int main(int argc, char **argv)
 	*temp = s1;
 	pthread_create(&input1, NULL, handlestdin, (void *)temp);
 	pthread_create(&input2, NULL, handlesocketin, (void *)temp);
-	//pthread_create(&input3, NULL, printprompt, (void *)temp);
+
 	while (1)
 	{
 		if (s1 == -1)
 			return 0;
 	}
-	//close(s1);
-	//shmdt(data);
-	//shmctl(shmid, IPC_RMID, NULL);
 	return 0;
 }
